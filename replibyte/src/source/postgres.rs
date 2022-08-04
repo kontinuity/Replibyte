@@ -106,6 +106,18 @@ impl<'a> Source for Postgres<'a> {
 
         dump_args.append(&mut only_tables_args);
 
+        let skip_table_data: Vec<String> = options
+            .skip_table_data
+            .iter()
+            .map(|cfg| format!("--exclude-table-data={}.{}", cfg.database, cfg.table))
+            .collect();
+        let mut skip_table_data: Vec<&str> = skip_table_data
+            .iter()
+            .map(String::as_str)
+            .collect();
+
+        dump_args.append(&mut skip_table_data);
+
         dump_args.push(self.database);
 
         // TODO: as for mysql we can exclude tables directly here so we can remove the skip_tables_map checks
@@ -522,6 +534,7 @@ mod tests {
             skip_config: &vec![],
             database_subset: &None,
             only_tables: &vec![],
+            skip_table_data: &vec![],
         };
 
         assert!(p.read(source_options, |original_query, query| {}).is_err());

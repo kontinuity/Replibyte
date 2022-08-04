@@ -112,6 +112,12 @@ where
                 None => &empty_config,
             };
 
+            let empty_config = vec![];
+            let skip_table_data_config = match &source.skip_table_data {
+                Some(config) => config,
+                None => &empty_config,
+            };
+
             for only_table in only_tables_config {
                 for skip in skip_config {
                     if only_table.database == skip.database && only_table.table == skip.table {
@@ -132,6 +138,7 @@ where
                 skip_config: &skip_config,
                 database_subset: &source.database_subset,
                 only_tables: &only_tables_config,
+                skip_table_data: &skip_table_data_config,
             };
 
             match args.source_type.as_ref().map(|x| x.as_str()) {

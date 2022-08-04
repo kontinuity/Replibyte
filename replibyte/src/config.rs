@@ -204,6 +204,7 @@ pub struct SourceConfig {
     pub skip: Option<Vec<SkipConfig>>,
     pub database_subset: Option<DatabaseSubsetConfig>,
     pub only_tables: Option<Vec<OnlyTablesConfig>>,
+    pub skip_table_data: Option<Vec<SkipTableDataConfig>>,
 }
 
 impl SourceConfig {
@@ -248,6 +249,12 @@ pub struct DatabaseSubsetConfig {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct OnlyTablesConfig {
+    pub database: String,
+    pub table: String,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+pub struct SkipTableDataConfig {
     pub database: String,
     pub table: String,
 }
