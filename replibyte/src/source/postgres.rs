@@ -97,7 +97,7 @@ impl<'a> Source for Postgres<'a> {
         let only_tables_args: Vec<String> = options
             .only_tables
             .iter()
-            .map(|cfg| format!("--table={}.{}", cfg.database, cfg.table))
+            .flat_map(|cfg| ["--table".to_string(), format!("{}.{}", cfg.database, cfg.table)])
             .collect();
         let mut only_tables_args: Vec<&str> = only_tables_args
             .iter()
@@ -109,7 +109,7 @@ impl<'a> Source for Postgres<'a> {
         let skip_table_data: Vec<String> = options
             .skip_table_data
             .iter()
-            .map(|cfg| format!("--exclude-table-data={}.{}", cfg.database, cfg.table))
+            .flat_map(|cfg| ["--exclude-table-data".to_string(), format!("{}.{}", cfg.database, cfg.table)])
             .collect();
         let mut skip_table_data: Vec<&str> = skip_table_data
             .iter()
@@ -522,6 +522,7 @@ mod tests {
             skip_config: &vec![],
             database_subset: &None,
             only_tables: &vec![],
+            skip_table_data: &vec![],
         };
 
         assert!(p.read(source_options, |original_query, query| {}).is_ok());
@@ -550,6 +551,7 @@ mod tests {
             skip_config: &vec![],
             database_subset: &None,
             only_tables: &vec![],
+            skip_table_data: &vec![],
         };
 
         let _ = p.read(source_options, |original_query, query| {
@@ -676,6 +678,7 @@ mod tests {
             skip_config: &vec![],
             database_subset: &None,
             only_tables: &vec![],
+            skip_table_data: &vec![],
         };
 
         let _ = p.read(source_options, |original_query, query| {
@@ -717,6 +720,7 @@ mod tests {
             skip_config: &skip_config,
             database_subset: &None,
             only_tables: &vec![],
+            skip_table_data: &vec![],
         };
 
         let _ = p.read(source_options, |_original_query, query| {
@@ -768,6 +772,7 @@ mod tests {
                 passthrough_tables: None,
             }),
             only_tables: &vec![],
+            skip_table_data: &vec![],
         };
 
         let mut rows_percent_50 = vec![];
@@ -805,6 +810,7 @@ mod tests {
                 passthrough_tables: None,
             }),
             only_tables: &vec![],
+            skip_table_data: &vec![],
         };
 
         let mut rows_percent_30 = vec![];
