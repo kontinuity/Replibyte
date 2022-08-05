@@ -10,6 +10,7 @@ use std::{env, thread};
 
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
+use log::info;
 use migration::{migrations, Migrator};
 use utils::get_replibyte_version;
 
@@ -20,7 +21,6 @@ use crate::datastore::s3::S3;
 use crate::datastore::Datastore;
 use crate::source::{Source, SourceOptions};
 use crate::tasks::{MaxBytes, TransferredBytes};
-use crate::telemetry::{ClientOptions, TelemetryClient, TELEMETRY_TOKEN};
 use crate::utils::epoch_millis;
 
 mod cli;
@@ -39,10 +39,6 @@ mod types;
 mod utils;
 
 fn show_progress_bar(rx_pb: Receiver<(TransferredBytes, MaxBytes)>) {
-    let pb = ProgressBar::new(0);
-    pb.set_style(ProgressStyle::default_spinner());
-
-    let mut style_is_progress_bar = false;
     let mut _max_bytes = 0usize;
     let mut last_transferred_bytes = 0usize;
 
@@ -51,36 +47,14 @@ fn show_progress_bar(rx_pb: Receiver<(TransferredBytes, MaxBytes)>) {
             Ok(msg) => msg,
             Err(_) => (last_transferred_bytes, _max_bytes),
         };
-
-        if _max_bytes == 0 && style_is_progress_bar {
-            // show spinner if there is no max_bytes indicated
-            pb.set_style(ProgressStyle::default_spinner());
-            style_is_progress_bar = false;
-        } else if _max_bytes > 0 && !style_is_progress_bar {
-            pb.set_style(ProgressStyle::default_bar()
-                .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.green/blue}] {bytes}/{total_bytes} ({eta})")
-                .progress_chars("#>-"));
-            style_is_progress_bar = true;
-        }
-
-        if max_bytes != _max_bytes {
-            pb.set_length(max_bytes as u64);
-            _max_bytes = max_bytes;
-        }
-
-        last_transferred_bytes = transferred_bytes;
-        pb.set_position(transferred_bytes as u64);
-
+        info!("Transferred {transferred_bytes}/{max_bytes}");
         sleep(Duration::from_micros(50));
     }
 }
 
 fn main() {
-    let start_exec_time = utils::epoch_millis();
-
     env_logger::init();
 
-    let env_args = env::args().collect::<Vec<String>>();
     let args = CLI::parse();
 
     let file = File::open(args.config).expect("missing config file");
@@ -88,28 +62,8 @@ fn main() {
 
     let sub_commands: &SubCommand = &args.sub_commands;
 
-    let telemetry_client = match args.no_telemetry {
-        true => None,
-        false => Some(TelemetryClient::new(ClientOptions::from(TELEMETRY_TOKEN))),
-    };
-
-    let telemetry_config = config.clone();
-
-    if let Some(telemetry_client) = &telemetry_client {
-        let _ = telemetry_client.capture_command(&telemetry_config, sub_commands, &env_args, None);
-    }
-
     if let Err(err) = run(config, &sub_commands) {
         eprintln!("{}", err);
-    }
-
-    if let Some(telemetry_client) = &telemetry_client {
-        let _ = telemetry_client.capture_command(
-            &telemetry_config,
-            sub_commands,
-            &env_args,
-            Some(epoch_millis() - start_exec_time),
-        );
     }
 }
 

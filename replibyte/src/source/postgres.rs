@@ -120,12 +120,12 @@ impl<'a> Source for Postgres<'a> {
 
         dump_args.push(self.database);
 
+        info!("Starting dump");
         // TODO: as for mysql we can exclude tables directly here so we can remove the skip_tables_map checks
         let mut process = Command::new("pg_dump")
             .env("PGPASSWORD", self.password)
             .args(dump_args)
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
             .spawn()?;
 
         let stdout = process
@@ -144,7 +144,6 @@ impl<'a> Source for Postgres<'a> {
                 read_and_transform(reader, options, query_callback);
             }
         };
-
         wait_for_command(&mut process)
     }
 }
